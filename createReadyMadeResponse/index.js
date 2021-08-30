@@ -1,68 +1,126 @@
-const { database } = require('./firebaseDb');
-
-const CATEGORIES = "Categories";
-const GODS = "Your favorite gods";
-const VIDEOS = "Videos";
-const CHANNELS = "Channels"
-
-const THREE_COLUMN_LAYOUT = "THREE_COLUMN_LAYOUT";
-const TWO_COLUMN_LAYOUT = "TWO_COLUMN_LAYOUT";
-const HORIZONTAL_LAYOUT = "HORIZONTAL_LAYOUT";
+const { database, admin } = require('./firebaseDb');
 
 const modulesCollection = database.collection("modules");
-const homePage = database.collection("pages").doc("home");
+const pageCollection = database.collection("pages");
 const entityCollection = database.collection("entities");
 
-exports.createReadyMadeResponse = async (message, context) => {
-// exports.createReadyMadeResponse = async (req, res) => {
+//sort
+function sortEntitiesByViews(entities){
+  return entities.sort(function(firstEntity, secondEntity) {
+    return secondEntity.views - firstEntity.views;
+  })
+}
+
+//sort module
+function sortModulesByPostion(modules){
+  return modules.sort(function(firstModule, secondModule) {
+    return firstModule.position - secondModule.position;
+  })
+}
+
+async function getEntitiesByTags(tags = []){
+  if(tags.length > 10)
+    throw "Tags mustn't exceed to 10"
+  let snapshot = await entityCollection.where('tags', 'array-contains-any', tags).get();
+  if(snapshot.docs.length == 0) return [];
+  return parseDocs(snapshot.docs);
+}
+
+async function getEntitiesById(entityIds = []){
+  var i,j, chunkEntityList, entities = [], chunk = 10;
+  for (i = 0,j = entityIds.length; i < j; i += chunk) {
+      chunkEntityList = entityIds.slice(i, i + chunk);
+      let snapshot = await 
+        entityCollection.where(admin.firestore.FieldPath.documentId(), 'in', chunkEntityList).get();
+      if(snapshot.docs.length == 0) continue;
+      entities = [...entities, ...parseDocs(snapshot.docs)];
+  }
+  return entities;
+}
+
+// ranking entities logic wise i.e topscore/random/manual
+async function rankEntities(rankingLogic, entities){
+  if(rankingLogic === "topscore")
+    return sortEntitiesByViews(entities)
+  
+  return entities;
+}
+
+function parseDocs(docs){
+  let entities = [];
+  docs.forEach(document =>  {
+    let [id, data] = [document.id, document.data()];
+    entities.push({id, ...data});
+  });
+  return entities;
+}
+
+async function rankAndUploadData({page, documentId, rankingLogic, modulePosition, entityList = []}){
+  try {
+    if(entityList.length > 0){
+      const rankedEntities = await rankEntities(rankingLogic, entityList);
+      const moduleReference = modulesCollection.doc(documentId);
+      const pageDocument = pageCollection.doc(page);
+      await moduleReference.update({
+        "entities": rankedEntities
+      }, {merge: true})
+      // await pageDocument.update({
+      //   [`modules.${documentId}`]: modulePosition
+      // }, {merge: true})
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+// exports.createReadyMadeResponse = async (message, context) => {
+exports.createReadyMadeResponse = async (req, res) => {
     try {
-      // console.log(message.data)
-      const data = message.data ? Buffer.from(message.data, 'base64').toString(): [];
-      const moduleIds = JSON.parse(data);
-      moduleIds.forEach(async id => {
-        console.log(id)
-          const moduleRef = await modulesCollection.doc(id);
-          const moduleData = await moduleRef.get();
-          const {position, viewAllEnable, entityRankingLogic, entitySelectionLogic, tagCombination} = moduleData.data();
+      // const data = message.data ? Buffer.from(message.data, 'base64').toString(): [];
+      const moduleIds = JSON.parse("[\"Xn8rdb2zGpxjfM9PFQ1b\",\"dVCS4QkHv7qpS4RaRSUM\"]");
+      moduleIds.forEach(async documentId => {
+
+          let entityList = [];
+          let moduleReference = await modulesCollection.doc(documentId);
+          let moduleData = await moduleReference.get();
+          let {
+            position, 
+            entityRankingLogic, 
+            entitySelectionLogic, 
+            tags, 
+            page,
+            selectedEntityIds 
+          } = moduleData.data();
+
+          let option = {
+            page: page,
+            documentId: documentId,
+            rankingLogic: entityRankingLogic,
+            modulePosition: position,
+          }
 
           //run if admin set entitySelectionLogin to tagcombination
           if(entitySelectionLogic === "tagcombination"){
-            tagCombination.forEach(async combination => {
-
-              let entities, docs;
-              const parseCombination = JSON.parse(combination);
-              //if combination have only one tag
-              if (parseCombination.length == 1){
-                entities = await entityCollection
-                  .where(`tags.${parseCombination[0]}`, "==", true).get();
-              }
-              //if combination have two tags
-              else if (parseCombination.length == 2){
-                entities = await entityCollection
-                  .where(`tags.${parseCombination[0]}`, "==", true)
-                  .where(`tags.${parseCombination[1]}`, "==", true).get();
-              }
-              docs = entities.docs;
-              
-              if(docs == null || docs.length == 0) return;
-
-              docs.forEach(doc => {
-                let [id, data] = [doc.id, doc.data()];
-                entityList.push({id, ...data});
-              })
-              if(entityList.length > 0){
-                //change entities of module in modules collection
-                await moduleRef.update({
-                  "entities": entityList
-                })
-                //change position of module in home page
-                await homePage.update({
-                  [`modules.${id}`]: position
-                })
-              }
-            })
+            if(tags && tags.length > 0){
+              entityList = await getEntitiesByTags(tags)
+              rankAndUploadData(Object.assign({...option}, {entityList: entityList}));
+            }
           }
-        }) 
+          else if (entitySelectionLogic == "manual"){
+            if(selectedEntityIds && selectedEntityIds.length > 0){
+              entityList = await getEntitiesById(selectedEntityIds);
+              rankAndUploadData(Object.assign({...option}, {entityList: entityList}));
+            }
+          }
+      });
+
+      const homePageReference = pageCollection.doc("home");
+      const homeModules = await modulesCollection.where('page', '==', 'home').get();
+      const modules = parseDocs(homeModules.docs);
+      const sortedModules = sortModulesByPostion(modules);
+      await homePageReference.update({
+        modules: sortedModules
+      })
     } catch (error) {
       console.log(error)
     }

@@ -6,3 +6,4 @@ admin.initializeApp({
 });
 
 exports.database = admin.firestore();
+exports.admin = admin;
