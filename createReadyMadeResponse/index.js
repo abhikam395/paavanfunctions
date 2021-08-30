@@ -21,7 +21,7 @@ function sortModulesByPostion(modules){
 async function getEntitiesByTags(tags = []){
   if(tags.length > 10)
     throw "Tags mustn't exceed to 10"
-  let snapshot = await entityCollection.where('tags', 'array-contains-any', tags).get();
+  let snapshot = await entityCollection.limit(100).where('tags', 'array-contains-any', tags).get();
   if(snapshot.docs.length == 0) return [];
   return parseDocs(snapshot.docs);
 }
@@ -55,12 +55,11 @@ function parseDocs(docs){
   return entities;
 }
 
-async function rankAndUploadData({page, documentId, rankingLogic, modulePosition, entityList = []}){
+async function rankAndUploadData({documentId, rankingLogic, entityList = []}){
   try {
     if(entityList.length > 0){
       const rankedEntities = await rankEntities(rankingLogic, entityList);
       const moduleReference = modulesCollection.doc(documentId);
-      const pageDocument = pageCollection.doc(page);
       await moduleReference.update({
         "entities": rankedEntities
       }, {merge: true})
