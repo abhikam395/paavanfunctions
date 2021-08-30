@@ -240,7 +240,7 @@ exports.home = async function(req, res){
             },
             {
                 id: 6,
-                title: 'c',
+                title: 'Popular Categories',
                 subtitle: null,
                 layout: LAYOUT_TYPES.THREE_COLUMN_LAYOUT,
                 contents: [

@@ -7,7 +7,7 @@ const videos = [
         channel_name: 'VIPUL MUSIC COMPANY',
         video_id: '4rURry0UFB8',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '216,084,008',
     },
     {
@@ -16,7 +16,7 @@ const videos = [
         channel_name: ' Arun Chauhan',
         video_id: 'CRJvIygabGA',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '6,856,225',
     },
     {
@@ -25,7 +25,7 @@ const videos = [
         channel_name: 'DHANJI DUBEY',
         video_id: 'vNDsqW5Pt3s',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '1,314,663',
     },
     {
@@ -34,7 +34,7 @@ const videos = [
         channel_name: 'BHAKTI SAGAR',
         video_id: 'Z2ZOMdYIcFs',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '516,561',
     },
     {
@@ -43,7 +43,7 @@ const videos = [
         channel_name: 'DEV BHAKTI SONG',
         video_id: 'kuDH6AuAM0E',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '20,889,035',
     },
     {
@@ -52,7 +52,7 @@ const videos = [
         channel_name: 'Bhajan Wallah',
         video_id: 'FRRGSJeBvBY',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '8,849,627',
     },
     {
@@ -61,7 +61,7 @@ const videos = [
         channel_name: 'Vedon Ki Aur',
         video_id: 'Twf5KWtKJ10',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '4,493,045',
     },
     {
@@ -70,7 +70,7 @@ const videos = [
         channel_name: 'TechJar',
         video_id: 'dweDvx_ezss',
         placeholder_url: getImage(),
-        channel_icon: getImage(),
+        channel_image: getImage(),
         views: '1,151,855',
     }
 ]
