@@ -21,7 +21,7 @@ function sortModulesByPostion(modules){
 async function getEntitiesByTags(tags = []){
   if(tags.length > 10)
     throw "Tags mustn't exceed to 10"
-  let snapshot = await entityCollection.limit(100).where('tags', 'array-contains-any', tags).limit(10).get();
+  let snapshot = await entityCollection.limit(10).where('tags', 'array-contains-any', tags).get();
   if(snapshot.docs.length == 0) return [];
   return parseDocs(snapshot.docs);
 }
