@@ -1,39 +1,64 @@
 // const {getImage} = require('./images');
 // const {LAYOUT_TYPES, CONTENT_TYPES, CARD_TYPES} = require('./constants');
-var admin = require("firebase-admin");
-var serviceAccount = require("./test-47076-firebase-adminsdk-7tb7t-ef35dc0961.json");
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://test-47076-default-rtdb.firebaseio.com"
-});
+// var admin = require("firebase-admin");
+// var serviceAccount = require("./test-47076-firebase-adminsdk-7tb7t-ef35dc0961.json");
+// admin.initializeApp({
+//     credential: admin.credential.cert(serviceAccount),
+//     databaseURL: "https://test-47076-default-rtdb.firebaseio.com"
+// });
 
-const database = admin.firestore();
-const channelCollection = database.collection("channel");
+// const database = admin.firestore();
+// const channelCollection = database.collection("channel");
 
-exports.helloWorld = async (req, res) => {
+// exports.helloWorld = async (req, res) => {
+//     try {
+//         const channels = [];
+//         const response = await channelCollection.get();
+//         const docs = await response.docs;
+//         docs.forEach(object => {
+//             const [id, data] = [object.id, object.data()];
+//             const {description, thumbnail, name} = data;
+//             const channel = {
+//                 id,
+//                 description,
+//                 thumbnail,
+//                 name: name
+//             }
+//             channels.push(channel);
+//         });
+//         res.status(200).json({
+//             status: true,
+//             data: channels
+//         })
+//     } catch (error) {
+//         console.log(error)
+//     }
+            
+const {database} = require('./firebaseDatabase');
+
+// const database = admin.firestore();
+const pageCollection = database.collection("pages");
+
+exports.channel = async (req, res) => {
     try {
-        const channels = [];
-        const response = await channelCollection.get();
-        const docs = await response.docs;
-        docs.forEach(object => {
-            const [id, data] = [object.id, object.data()];
-            const {description, thumbnail, name} = data;
-            const channel = {
-                id,
-                description,
-                thumbnail,
-                name: name
-            }
-            channels.push(channel);
-        });
+        const snapshot = await pageCollection.doc('channel').get();
+        const data = snapshot.data();
+        const modules = data?.modules || [];
+
+        //logic to filter modules
+
         res.status(200).json({
             status: true,
-            data: channels
+            data: modules
         })
     } catch (error) {
         console.log(error)
+        res.json({
+            status: false,
+        })
     }
-            
+};
+       
     
 
 //     const response = {
@@ -120,5 +145,5 @@ exports.helloWorld = async (req, res) => {
 //         ]
 //     }
     
-  };
+//   };
 

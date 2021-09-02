@@ -21,21 +21,23 @@ function sortModulesByPostion(modules){
 async function getEntitiesByTags(tags = []){
   if(tags.length > 10)
     throw "Tags mustn't exceed to 10"
-  let snapshot = await entityCollection.limit(100).where('tags', 'array-contains-any', tags).get();
+  let snapshot = await entityCollection.limit(100).where('tags', 'array-contains-any', tags).limit(10).get();
   if(snapshot.docs.length == 0) return [];
   return parseDocs(snapshot.docs);
 }
 
 async function getEntitiesById(entityIds = []){
-  var i,j, chunkEntityList, entities = [], chunk = 10;
-  for (i = 0,j = entityIds.length; i < j; i += chunk) {
-      chunkEntityList = entityIds.slice(i, i + chunk);
+  console.log(entityIds.length)
+  // var i,j, chunkEntityList, entities = [], chunk = 10;
+  // for (i = 0,j = entityIds.length; i < j; i += chunk) {
+  //     chunkEntityList = entityIds.slice(i, i + chunk);
       let snapshot = await 
-        entityCollection.where(admin.firestore.FieldPath.documentId(), 'in', chunkEntityList).get();
-      if(snapshot.docs.length == 0) continue;
-      entities = [...entities, ...parseDocs(snapshot.docs)];
-  }
-  return entities;
+        entityCollection.where(admin.firestore.FieldPath.documentId(), 'in', entityIds).get();
+      // if(snapshot.docs.length == 0) continue;
+      let entities = filterEntities(snapshot.docs);
+      return entities;
+  // }
+  // return entities;
 }
 
 // ranking entities logic wise i.e topscore/random/manual
@@ -47,12 +49,33 @@ async function rankEntities(rankingLogic, entities){
 }
 
 function parseDocs(docs){
-  let entities = [];
-  docs.forEach(document =>  {
+  return docs.map(document =>  {
     let [id, data] = [document.id, document.data()];
-    entities.push({id, ...data});
+    return {id, ...data};
   });
-  return entities;
+}
+
+function filterEntities(docs){
+  return docs.map(document =>  {
+    let [id, data] = [document.id, document.data()];
+    delete data.childEntities;
+    delete data.tags;
+    delete data.parent;
+    return {id, ...data};
+  });
+}
+
+function filterModules(docs){
+  return docs.map(document =>  {
+    let [id, data] = [document.id, document.data()];
+    delete data.position;
+    delete data.page;
+    delete data.selectedEntityIds;
+    delete data.tags;
+    delete data.entityRankingLogic;
+    delete data.entitySelectionLogic;
+    return {id, ...data};
+  });
 }
 
 async function rankAndUploadData({documentId, rankingLogic, entityList = []}){
@@ -107,7 +130,7 @@ exports.createReadyMadeResponse = async (req, res) => {
           }
           else if (entitySelectionLogic == "manual"){
             if(selectedEntityIds && selectedEntityIds.length > 0){
-              entityList = await getEntitiesById(selectedEntityIds);
+              entityList = await getEntitiesById(selectedEntityIds.slice(0, 10));
               rankAndUploadData(Object.assign({...option}, {entityList: entityList}));
             }
           }
@@ -115,11 +138,11 @@ exports.createReadyMadeResponse = async (req, res) => {
 
       const homePageReference = pageCollection.doc("home");
       const homeModules = await modulesCollection.where('page', '==', 'home').get();
-      const modules = parseDocs(homeModules.docs);
+      const modules = filterModules(homeModules.docs);
       const sortedModules = sortModulesByPostion(modules);
-      await homePageReference.update({
+      await homePageReference.set({
         modules: sortedModules
-      })
+      }, {merge: true})
     } catch (error) {
       console.log(error)
     }
