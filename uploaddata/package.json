@@ -1,0 +1,26 @@
+{
+  "name": "uploaddata",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "watch": {
+    "start": "*.js"
+  },
+  "scripts": {
+    "watch": "npm-watch start",
+    "start": "functions-framework --target=uploaddata"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google-cloud/functions-framework": "^1.9.0",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "firebase-admin": "^9.11.1",
+    "firebase-functions": "^3.15.5",
+    "fs": "^0.0.1-security",
+    "npm-watch": "^0.11.0",
+    "papaparse": "^5.3.1",
+    "request": "^2.88.2"
+  }
+}
